@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nicole · 记账本设置助手</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+  background: linear-gradient(180deg, #f5f7ff 0%, #eef2ff 100%);
+  min-height: 100vh;
+  padding: 30px 20px 60px;
+  color: #1c1c1e;
+}
+.wrap { max-width: 480px; margin: 0 auto; }
+.header {
+  text-align: center;
+  padding: 30px 0 40px;
+}
+.avatar {
+  width: 88px; height: 88px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  margin: 0 auto 18px;
+  box-shadow: 0 12px 32px rgba(102,126,234,0.35);
+}
+h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
+.subtitle { font-size: 14px; color: #8e8e93; }
+
+.step-card {
+  background: white;
+  border-radius: 22px;
+  padding: 26px 22px;
+  margin-bottom: 18px;
+  box-shadow: 0 8px 30px rgba(102,126,234,0.08);
+  position: relative;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+}
+.step-card.done { border-color: #34c759; background: #f5fff7; }
+.step-num {
+  position: absolute;
+  top: -14px; left: 24px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007aff, #5856d6);
+  color: white;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  box-shadow: 0 4px 12px rgba(0,122,255,0.3);
+}
+.step-card.done .step-num {
+  background: #34c759;
+  box-shadow: 0 4px 12px rgba(52,199,89,0.3);
+}
+.step-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 4px 0 14px;
+  padding-left: 22px;
+}
+.step-desc {
+  font-size: 14px;
+  color: #3c3c43;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.big-btn {
+  width: 100%;
+  padding: 18px 20px;
+  border: none;
+  border-radius: 16px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+  font-family: inherit;
+  text-decoration: none;
+}
+.big-btn:active { transform: scale(0.97); }
+.btn-blue {
+  background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+  color: white;
+  box-shadow: 0 8px 24px rgba(0,122,255,0.3);
+}
+.btn-green {
+  background: linear-gradient(135deg, #34c759 0%, #30b350 100%);
+  color: white;
+  box-shadow: 0 8px 24px rgba(52,199,89,0.3);
+}
+.btn-orange {
+  background: linear-gradient(135deg, #ff9500 0%, #ff7b00 100%);
+  color: white;
+  box-shadow: 0 8px 24px rgba(255,149,0,0.3);
+}
+.btn-purple {
+  background: linear-gradient(135deg, #af52de 0%, #8e44c7 100%);
+  color: white;
+  box-shadow: 0 8px 24px rgba(175,82,222,0.3);
+}
+.btn-gray {
+  background: #e5e5ea;
+  color: #1c1c1e;
+}
+.btn-small {
+  display: inline-flex;
+  width: auto;
+  padding: 10px 16px;
+  font-size: 14px;
+  border-radius: 12px;
+  margin-top: 10px;
+  box-shadow: none;
+}
+
+.url-box {
+  background: #f7f8ff;
+  border: 2px dashed #c7c7cc;
+  border-radius: 14px;
+  padding: 14px;
+  margin: 14px 0;
+  word-break: break-all;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: #0047b3;
+  line-height: 1.5;
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+.tip-box {
+  background: #fff8e6;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 14px;
+  border-left: 4px solid #ff9500;
+}
+.tip-title { font-size: 13px; font-weight: 700; color: #b25b00; margin-bottom: 4px; }
+.tip-text { font-size: 13px; color: #8a5a00; line-height: 1.6; }
+
+.done-tip {
+  display: none;
+  background: #dcf5e3;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 14px;
+  border-left: 4px solid #34c759;
+}
+.done-tip.show { display: block; }
+.done-tip-text { font-size: 13px; color: #1b6e2c; font-weight: 600; }
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: #f7f8ff;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.checkbox {
+  width: 26px; height: 26px;
+  border: 2px solid #c7c7cc;
+  border-radius: 8px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.checkbox.checked {
+  background: #34c759;
+  border-color: #34c759;
+}
+.checkbox.checked::after {
+  content: '✓';
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+}
+.check-label {
+  font-size: 14px;
+  color: #3c3c43;
+  font-weight: 500;
+}
+
+.progress-wrap {
+  background: white;
+  border-radius: 22px;
+  padding: 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 30px rgba(102,126,234,0.08);
+}
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.progress-title { font-size: 15px; font-weight: 600; }
+.progress-percent { font-size: 15px; font-weight: 700; color: #007aff; }
+.progress-bar {
+  height: 12px;
+  background: #e5e5ea;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+  border-radius: 6px;
+  width: 0%;
+  transition: width 0.5s;
+}
+
+.note-text {
+  font-size: 12px;
+  color: #8e8e93;
+  text-align: center;
+  margin-top: 20px;
+  line-height: 1.7;
+}
+.note-text a { color: #007aff; }
+
+.link-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  background: #e1f0ff;
+  color: #0060c4;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.copy-feedback {
+  color: #34c759;
+  font-weight: 700;
+  font-size: 12px;
+  display: none;
+  margin-left: 8px;
+  align-self: center;
+}
+.copy-feedback.show { display: inline-block; }
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="header">
+    <div class="avatar">👋</div>
+    <h1>Hi Nicole！</h1>
+    <p class="subtitle">跟着我点下面的按钮，<b>3分钟</b>搞定记账本 🎉</p>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span class="progress-title">设置进度</span>
+      <span class="progress-percent" id="progressPercent">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- 第一步 -->
+  <div class="step-card" id="step1-card">
+    <div class="step-num">1</div>
+    <div class="step-title">把记账本装到桌面</div>
+    <div class="step-desc">
+      这一步把记账本 App 放到你的手机桌面上，以后点开就能用。
+    </div>
+
+    <div class="btn-row">
+      <a class="big-btn btn-blue" href="./记账本.html">
+        📒 <span>先打开记账本</span>
+      </a>
+      <a class="big-btn btn-blue btn-small" id="dlLink" href="./记账本.html" download="记账本.html">
+        💾 另存文件
+      </a>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-title">💡 打开后怎么办？</div>
+      <div class="tip-text">
+        1. 打开后，点 Safari <b>底部中间的「分享按钮」</b>（方框向上箭头）<br>
+        2. 往下滑找到 <b>「添加到主屏幕」</b> → 点右上角「添加」<br>
+        3. 桌面就有<b>记账本图标</b>了！以后点桌面图标打开
+      </div>
+    </div>
+
+    <div class="checkbox-row" onclick="toggleStep(1)">
+      <div class="checkbox" id="step1-check"></div>
+      <span class="check-label">✅ 我已经把记账本加到桌面了</span>
+    </div>
+    <div class="done-tip" id="step1-done">
+      <div class="done-tip-text">🎉 太棒了！记账本图标已经在你桌面上了～</div>
+    </div>
+  </div>
+
+  <!-- 第二步 -->
+  <div class="step-card" id="step2-card">
+    <div class="step-num">2</div>
+    <div class="step-title">创建仓库（存数据用）</div>
+    <div class="step-desc">
+      点下面按钮跳转到 GitHub，创建一个仓库来永久保存你的记账数据。
+    </div>
+
+    <a class="big-btn btn-orange" href="https://github.com/new?name=family-accounts&private=1&description=Nicole家庭记账本备份&auto_init=1" rel="noopener">
+      🏗️ <span>点这里 → 创建仓库</span>
+    </a>
+
+    <div class="url-box" id="url2">https://github.com/new?name=family-accounts&private=1&description=Nicole家庭记账本备份&auto_init=1</div>
+    <div class="btn-row">
+      <button class="big-btn btn-gray btn-small" onclick="copyURL('url2', this)">
+        📋 <span>复制上面这串地址</span><span class="copy-feedback">✓ 已复制！</span>
+      </button>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-title">💡 打开后怎么做？</div>
+      <div class="tip-text">
+        1. 如果让你登录，就输 GitHub 密码登录<br>
+        2. <b>什么都不用改！</b>直接滑到屏幕<b>最底部</b><br>
+        3. 找到大大的<b>绿色按钮</b>「Create repository」，点它！<br>
+        4. 看到新页面就算成功，然后回到本页继续
+      </div>
+    </div>
+
+    <div class="checkbox-row" onclick="toggleStep(2)">
+      <div class="checkbox" id="step2-check"></div>
+      <span class="check-label">✅ 仓库创建成功了</span>
+    </div>
+    <div class="done-tip" id="step2-done">
+      <div class="done-tip-text">✅ 仓库准备好了！用来永久保存你的记账数据～</div>
+    </div>
+  </div>
+
+  <!-- 第三步 -->
+  <div class="step-card" id="step3-card">
+    <div class="step-num">3</div>
+    <div class="step-title">获取密钥（让App能备份）</div>
+    <div class="step-desc">
+      点下面按钮创建一串「密钥」，复制后粘贴到记账本里就行。
+    </div>
+
+    <a class="big-btn btn-purple" href="https://github.com/settings/tokens/new?scopes=repo&description=记账本备份永久有效" rel="noopener">
+      🔑 <span>点这里 → 创建密钥</span>
+    </a>
+
+    <div class="url-box" id="url3">https://github.com/settings/tokens/new?scopes=repo&description=记账本备份永久有效</div>
+    <div class="btn-row">
+      <button class="big-btn btn-gray btn-small" onclick="copyURL('url3', this)">
+        📋 <span>复制上面这串地址</span><span class="copy-feedback">✓ 已复制！</span>
+      </button>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-title">⚠️ 这一步非常重要！仔细看</div>
+      <div class="tip-text">
+        1. 打开后什么都不用改，滑到<b>最底部</b><br>
+        2. 找到绿色按钮「<b>Generate token</b>」→ 点它<br>
+        3. 看到一串<b>绿色的字母数字</b>（ghp_开头）<br>
+        4. 👉 <b>用手指长按那串字母 → 全选 → 拷贝（复制）</b><br>
+        5. 复制好后，回到桌面打开「记账本」App
+      </div>
+    </div>
+
+    <div class="checkbox-row" onclick="toggleStep(3)">
+      <div class="checkbox" id="step3-check"></div>
+      <span class="check-label">✅ 密钥已经复制好了</span>
+    </div>
+    <div class="done-tip" id="step3-done">
+      <div class="done-tip-text">🔑 密钥到手！还差最后一步～</div>
+    </div>
+  </div>
+
+  <!-- 第四步 -->
+  <div class="step-card" id="step4-card">
+    <div class="step-num">4</div>
+    <div class="step-title">粘贴密钥 & 备份</div>
+    <div class="step-desc">
+      打开桌面的记账本 App，把复制的密钥粘进去，就完成啦！
+    </div>
+
+    <div class="tip-box" style="background:#e8f5ff;border-left-color:#007aff;">
+      <div class="tip-title" style="color:#004b8f;">📝 一步步做</div>
+      <div class="tip-text" style="color:#00457a;">
+        1. 打开桌面上的「<b>记账本</b>」App<br>
+        2. 点右下角「⚙️ 设置」→「☁️ GitHub 备份」<br>
+        3. 看到第三行「Token 访问密钥」输入框<br>
+        4. 👉 <b>长按输入框</b> → 「粘贴」<br>
+        5. 点「💾 保存配置」→ 看到成功提示<br>
+        6. 点「⬆️ 立即备份」→ 等几秒<br>
+        7. 看到「✅ 备份成功」就全部搞定了！
+      </div>
+    </div>
+
+    <div class="checkbox-row" onclick="toggleStep(4)">
+      <div class="checkbox" id="step4-check"></div>
+      <span class="check-label">🎉 全部搞定！记账本可以用了</span>
+    </div>
+    <div class="done-tip" id="step4-done">
+      <div class="done-tip-text">🎊🎊🎊 恭喜 Nicole！以后可以开心记账啦～</div>
+    </div>
+  </div>
+
+  <button class="big-btn btn-green" style="margin-top:20px;" onclick="showCelebrate()">
+    🎁 <span>我全部完成了，查看完成礼物！</span>
+  </button>
+
+  <p class="note-text">
+    遇到问题？随时找 AI 助手帮你～<br>
+    备份配置只需做一次，以后每周点「立即备份」10秒搞定
+  </p>
+
+</div>
+
+<script>
+let steps = { 1: false, 2: false, 3: false, 4: false };
+
+function toggleStep(n) {
+  steps[n] = !steps[n];
+  const check = document.getElementById('step' + n + '-check');
+  const done = document.getElementById('step' + n + '-done');
+  const card = document.getElementById('step' + n + '-card');
+
+  if (steps[n]) {
+    check.classList.add('checked');
+    done.classList.add('show');
+    card.classList.add('done');
+  } else {
+    check.classList.remove('checked');
+    done.classList.remove('show');
+    card.classList.remove('done');
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = 4;
+  let done = 0;
+  Object.values(steps).forEach(v => { if (v) done++; });
+  const percent = Math.round(done/total*100);
+  document.getElementById('progressPercent').textContent = percent + '%';
+  document.getElementById('progressFill').style.width = percent + '%';
+}
+
+function copyURL(id, btn) {
+  const text = document.getElementById(id).innerText.trim();
+  // 尝试标准复制
+  let ok = false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => { ok = true; showFeed(btn); },
+        () => { ok = fallback(text, btn); }
+      );
+    } else {
+      ok = fallback(text, btn);
+    }
+  } catch(e) {
+    ok = fallback(text, btn);
+  }
+}
+
+function fallback(text, btn) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (ok) showFeed(btn);
+    else alert('📋 请手动复制下面的地址（长按文字选择→拷贝）：\n\n' + text);
+    return ok;
+  } catch(e) {
+    alert('📋 请手动复制下面的地址（长按文字选择→拷贝）：\n\n' + text);
+    return false;
+  }
+}
+
+function showFeed(btn) {
+  const f = btn.querySelector('.copy-feedback');
+  if (!f) return;
+  f.classList.add('show');
+  setTimeout(() => { f.classList.remove('show'); }, 2000);
+}
+
+function showCelebrate() {
+  if (!steps[1] || !steps[2] || !steps[3] || !steps[4]) {
+    if (!confirm('还有步骤没打勾哦～\n确定全部完成了吗？')) return;
+  }
+  alert(
+    '🎊🎉🎊🎉🎊\n\n' +
+    '太棒了 Nicole！\n\n' +
+    '✅ 记账本在你桌面了\n' +
+    '✅ 备份仓库建好了\n' +
+    '✅ 密钥配置成功\n' +
+    '✅ 数据可以永久保存了\n\n' +
+    '现在你可以：\n' +
+    '• 右下角紫色 + 号 记一笔账\n' +
+    '• 设置里添加家人账号\n' +
+    '• 每周点一次备份就好\n\n' +
+    '祝你的小金库越来越满～💰✨\n\n' +
+    '🎊🎉🎊🎉🎊'
+  );
+}
+</script>
+</body>
+</html>
