@@ -1,0 +1,2187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="记账本">
+<title>家庭记账本</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+  background: #f2f2f7;
+  color: #1c1c1e;
+  min-height: 100vh;
+  padding-bottom: 120px;
+  padding-top: env(safe-area-inset-top);
+}
+.container { max-width: 500px; margin: 0 auto; padding: 16px; }
+
+/* 顶部栏 */
+.header {
+  background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+  color: white;
+  padding: 20px 16px 30px;
+  border-radius: 0 0 28px 28px;
+  margin: -16px -16px 20px;
+  box-shadow: 0 10px 30px rgba(0,122,255,0.18);
+}
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+/* ④ 左上角「我」按钮 —— 点开显示用户+切换+添加 */
+.me-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.22);
+  border: none;
+  color: white;
+  padding: 9px 16px 9px 10px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.me-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.icon-btn {
+  background: rgba(255,255,255,0.22);
+  border: none;
+  color: white;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-size: 19px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+/* ② 模块化卡片 —— 本月结余做成独立卡 */
+.balance-card {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  padding: 22px 20px;
+  margin-bottom: 14px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  text-align: center;
+}
+.balance-label { font-size: 13px; opacity: 0.85; margin-bottom: 6px; letter-spacing: 1px; }
+.balance-amount { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+
+/* ② 收入、支出两张独立卡片 */
+.summary-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.summary-card {
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 18px;
+  padding: 16px 14px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+.summary-card:active { transform: scale(0.98); }
+.summary-label { font-size: 12px; opacity: 0.85; margin-bottom: 6px; }
+.summary-value { font-size: 20px; font-weight: 700; }
+.income { color: #30d158; }
+.expense { color: #ff453a; }
+
+/* 标签页 */
+.tabs {
+  display: flex;
+  background: #e5e5ea;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+.tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #8e8e93;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab.active {
+  background: white;
+  color: #1c1c1e;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* 卡片 */
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 记录列表 */
+.date-group { margin-bottom: 20px; }
+.date-header {
+  font-size: 13px;
+  color: #8e8e93;
+  margin-bottom: 8px;
+  padding-left: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+.record-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f2f2f7;
+}
+.record-item:last-child { border-bottom: none; }
+.record-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+.record-info { flex: 1; min-width: 0; }
+.record-category { font-size: 15px; font-weight: 500; margin-bottom: 3px; }
+.record-note { font-size: 12px; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.record-amount {
+  font-size: 16px;
+  font-weight: 600;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #8e8e93;
+}
+.empty-emoji { font-size: 48px; margin-bottom: 12px; }
+.empty-text { font-size: 15px; }
+
+/* 表单 */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  font-size: 13px;
+  color: #8e8e93;
+  margin-bottom: 6px;
+  display: block;
+}
+.form-input, .form-select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e5e5ea;
+  border-radius: 12px;
+  font-size: 16px;
+  background: #fafafa;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.form-input:focus, .form-select:focus {
+  outline: none;
+  border-color: #007aff;
+  background: white;
+}
+.type-toggle {
+  display: flex;
+  background: #e5e5ea;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.type-btn {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #8e8e93;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.type-btn.active-expense { background: white; color: #ff453a; }
+.type-btn.active-income { background: white; color: #30d158; }
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 6px;
+  border-radius: 12px;
+  background: #fafafa;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+.category-item.selected {
+  border-color: #007aff;
+  background: #eaf4ff;
+}
+.category-emoji { font-size: 24px; margin-bottom: 4px; }
+.category-name { font-size: 11px; color: #3c3c43; }
+.amount-input-wrap {
+  display: flex;
+  align-items: center;
+  background: #fafafa;
+  border: 1px solid #e5e5ea;
+  border-radius: 12px;
+  padding: 4px 16px;
+}
+.currency-symbol { font-size: 20px; color: #8e8e93; margin-right: 8px; }
+.amount-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  font-weight: 700;
+  padding: 12px 0;
+  outline: none;
+  font-family: inherit;
+  color: #1c1c1e;
+  width: 100%;
+}
+
+/* 按钮 */
+.btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+  color: white;
+}
+.btn-primary:active { transform: scale(0.98); }
+.btn-secondary {
+  background: #e5e5ea;
+  color: #1c1c1e;
+}
+.btn-danger { background: #ffe5e5; color: #ff453a; }
+.btn-success { background: #d5f5e0; color: #248a3d; }
+.btn-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* 统计图表 */
+.stats-period-bar {
+  display: flex;
+  background: #e5e5ea;
+  border-radius: 10px;
+  padding: 3px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.stats-period {
+  flex: 1;
+  padding: 7px;
+  text-align: center;
+  border-radius: 8px;
+  color: #8e8e93;
+  cursor: pointer;
+  font-weight: 500;
+}
+.stats-period.active { background: white; color: #1c1c1e; }
+.chart-bar-wrap {
+  display: flex;
+  align-items: flex-end;
+  height: 160px;
+  gap: 6px;
+  margin: 20px 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f2f2f7;
+}
+.chart-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.chart-bar-fill {
+  width: 100%;
+  max-width: 28px;
+  border-radius: 6px 6px 0 0;
+  min-height: 4px;
+  transition: height 0.3s;
+}
+.chart-bar-label {
+  font-size: 10px;
+  color: #8e8e93;
+  margin-top: 6px;
+}
+.category-stat-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f2f2f7;
+}
+.category-stat-row:last-child { border-bottom: none; }
+.cat-stat-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-right: 12px; flex-shrink: 0;
+}
+.cat-stat-info { flex: 1; }
+.cat-stat-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.cat-stat-bar-bg { height: 6px; background: #f2f2f7; border-radius: 3px; overflow: hidden; }
+.cat-stat-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.cat-stat-right { margin-left: 10px; text-align: right; flex-shrink: 0; }
+.cat-stat-amount { font-size: 14px; font-weight: 600; }
+.cat-stat-percent { font-size: 11px; color: #8e8e93; margin-top: 2px; }
+
+/* ① 浮动按钮 —— 居中，加大，有文字标签「记一笔」 */
+.fab {
+  position: fixed;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+  color: white;
+  border: 3px solid white;
+  border-radius: 50%;
+  font-size: 32px;
+  font-weight: 300;
+  box-shadow: 0 10px 28px rgba(0,122,255,0.45), 0 0 0 4px rgba(0,122,255,0.1);
+  cursor: pointer;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+.fab:active { transform: translateX(-50%) scale(0.94); }
+/* 浮动按钮下方文字标签 */
+.fab-label {
+  position: fixed;
+  bottom: calc(68px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: #007aff;
+  z-index: 2147483647;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.9);
+  letter-spacing: 1px;
+}
+
+/* ① 底部导航 —— 严格对称分布（左右2个，中间留空给FAB） */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255,255,255,0.985);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(0,0,0,0.06);
+  display: grid;
+  grid-template-columns: 1fr 1fr 90px 1fr 1fr;
+  align-items: center;
+  padding: 8px 0 calc(28px + env(safe-area-inset-bottom));
+  z-index: 2147483646;
+}
+.tab-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+  color: #8e8e93;
+  cursor: pointer;
+  transition: color 0.2s;
+  font-size: 11px;
+  font-weight: 500;
+}
+.tab-bar-item.active { color: #007aff; }
+.tab-bar-icon { font-size: 24px; margin-bottom: 2px; }
+.tab-spacer { /* 中间给FAB留空 */ width: 100%; }
+
+/* 模态框 */
+.modal-mask {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+  align-items: stretch;
+  justify-content: center;
+}
+.modal-mask.show { display: flex; }
+/* ⑤ 记账弹窗 —— 完整可滚动 + 保存按钮底部sticky固定永远可见 */
+.modal {
+  background: white;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 24px 24px 0 0;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s;
+  margin-top: auto; /* 贴底 */
+}
+/* ⑤ 内容区可自由滚动 */
+.modal-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 4px 12px;
+}
+/* ⑤ 保存取消按钮固定在底部，随时可见 */
+.modal-footer {
+  flex-shrink: 0;
+  padding-top: 10px;
+  padding-bottom: 4px;
+  background: linear-gradient(to top, #fff 70%, rgba(255,255,255,0));
+  position: sticky;
+  bottom: 0;
+}
+.modal-handle {
+  width: 44px;
+  height: 5px;
+  background: #d1d1d6;
+  border-radius: 3px;
+  margin: 0 auto 12px;
+}
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  text-align: center;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* 用户管理 */
+.user-list { margin-bottom: 16px; }
+.user-row {
+  display: flex;
+  align-items: center;
+  padding: 14px;
+  background: #fafafa;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+.user-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  margin-right: 12px;
+}
+.user-info { flex: 1; }
+.user-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+.user-sub { font-size: 12px; color: #8e8e93; }
+.user-row .delete-btn {
+  background: #ffe5e5;
+  border: none;
+  color: #ff453a;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.current-tag {
+  background: #eaf4ff;
+  color: #007aff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+/* ④ 用户切换卡片条目 */
+.me-user-card {
+  display: flex;
+  align-items: center;
+  padding: 13px;
+  border-radius: 14px;
+  background: #fafafa;
+  border: 2px solid transparent;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.me-user-card.is-current {
+  background: #eaf4ff;
+  border-color: #007aff;
+}
+.me-user-card:active { transform: scale(0.99); }
+.me-user-check {
+  margin-left: auto;
+  color: #007aff;
+  font-size: 18px;
+  font-weight: 700;
+}
+/* 「+ 添加新用户」按钮卡片 */
+.me-add-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 15px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eaf4ff 0%, #f0ebff 100%);
+  border: 1.5px dashed #007aff99;
+  color: #007aff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+.me-add-card:active { transform: scale(0.99); }
+.me-add-input-wrap {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.me-add-input-wrap .form-input { padding: 12px 14px; font-size: 15px; }
+.me-add-input-wrap .btn { padding: 0 18px; }
+
+/* GitHub 配置 */
+.config-section {
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.config-hint {
+  font-size: 12px;
+  color: #8e8e93;
+  line-height: 1.6;
+  margin-top: 6px;
+}
+.backup-info {
+  font-size: 12px;
+  color: #8e8e93;
+  margin-top: 10px;
+}
+
+/* 弹出提示 */
+.toast {
+  position: fixed;
+  top: calc(60px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(28,28,30,0.92);
+  color: white;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  max-width: 85%;
+  text-align: center;
+}
+.toast.show { opacity: 1; }
+
+/* 设置项 */
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid #f2f2f7;
+  cursor: pointer;
+}
+.settings-item:last-child { border-bottom: none; }
+.settings-left { display: flex; align-items: center; }
+.settings-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  margin-right: 12px;
+}
+.settings-label { font-size: 15px; }
+.settings-arrow { color: #c7c7cc; font-size: 16px; }
+
+/* 删除确认浮层 */
+.record-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 10px;
+}
+.record-edit-btn, .record-delete-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+.record-edit-btn { background: #e5e5ea; color: #1c1c1e; }
+.record-delete-btn { background: #ffe5e5; color: #ff453a; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- 主页面 -->
+<div id="page-home">
+  <div class="header">
+    <div class="container">
+      <div class="header-top">
+        <!-- ④ 左上角「我」按钮：点开弹窗显示所有用户 + 切换 + 添加 -->
+        <button class="me-btn" onclick="showModal('modal-me')" id="meBtnTop">
+          <div class="me-avatar" id="meAvatarTop">👤</div>
+          <span id="meNameTop">我</span>
+        </button>
+        <!-- ③ 唯一设置按钮入口（右上角）：合并了底部「设置」tab 的所有功能 -->
+        <button class="icon-btn" onclick="showModal('modal-settings-all')" title="设置">⚙️</button>
+      </div>
+
+      <!-- ② 本月结余独立大卡 -->
+      <div class="balance-card">
+        <div class="balance-label">本月结余</div>
+        <div class="balance-amount" id="monthBalance">¥0.00</div>
+      </div>
+
+      <!-- ② 收入、支出两卡并排 -->
+      <div class="summary-cards">
+        <div class="summary-card">
+          <div class="summary-label">本月收入</div>
+          <div class="summary-value income" id="monthIncome">¥0.00</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">本月支出</div>
+          <div class="summary-value expense" id="monthExpense">¥0.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-title">
+        <span>最近记录</span>
+        <span style="font-size:13px;color:#8e8e93;font-weight:normal;cursor:pointer;" onclick="switchTab('records')">查看全部 ›</span>
+      </div>
+      <div id="recentList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 记录列表页 -->
+<div id="page-records" class="hidden">
+  <div class="header" style="padding: 20px 16px;">
+    <div class="container">
+      <div class="header-top" style="margin-bottom:0;">
+        <button class="me-btn" onclick="showModal('modal-me')">
+          <div class="me-avatar" id="meAvatarRecords">👤</div>
+          <span id="meNameRecords">我</span>
+        </button>
+        <button class="icon-btn" onclick="showModal('modal-settings-all')" title="设置">⚙️</button>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" onclick="filterRecords('all', this)">全部</div>
+      <div class="tab" onclick="filterRecords('expense', this)">支出</div>
+      <div class="tab" onclick="filterRecords('income', this)">收入</div>
+    </div>
+    <div id="allRecordsList"></div>
+  </div>
+</div>
+
+<!-- 统计页 -->
+<div id="page-stats" class="hidden">
+  <div class="header" style="padding: 20px 16px;">
+    <div class="container">
+      <div class="header-top" style="margin-bottom:0;">
+        <button class="me-btn" onclick="showModal('modal-me')">
+          <div class="me-avatar" id="meAvatarStats">👤</div>
+          <span id="meNameStats">我</span>
+        </button>
+        <button class="icon-btn" onclick="showModal('modal-settings-all')" title="设置">⚙️</button>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="card">
+      <div class="stats-period-bar">
+        <div class="stats-period" onclick="setStatsPeriod('week', this)">本周</div>
+        <div class="stats-period active" onclick="setStatsPeriod('month', this)">本月</div>
+        <div class="stats-period" onclick="setStatsPeriod('year', this)">本年</div>
+        <div class="stats-period" onclick="setStatsPeriod('all', this)">全部</div>
+      </div>
+      <div class="summary-cards" style="margin-top:12px;">
+        <div class="summary-card" style="background:#d5f5e0;border-color:#30d15833;">
+          <div class="summary-label" style="color:#248a3d;">总收入</div>
+          <div class="summary-value income" id="statsIncome">¥0.00</div>
+        </div>
+        <div class="summary-card" style="background:#ffe5e5;border-color:#ff453a33;">
+          <div class="summary-label" style="color:#c92920;">总支出</div>
+          <div class="summary-value expense" id="statsExpense">¥0.00</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding:12px;background:#fafafa;border-radius:12px;text-align:center;">
+        <span style="font-size:12px;color:#8e8e93;">结余</span>
+        <div style="font-size:22px;font-weight:700;margin-top:2px;" id="statsNet">¥0.00</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">趋势图</div>
+      <div id="trendChart" class="chart-bar-wrap"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        <span id="catStatTitle">支出分类</span>
+        <span style="font-size:12px;color:#8e8e93;font-weight:normal;cursor:pointer;" onclick="toggleStatType()" id="statTypeToggle">切换到收入 ›</span>
+      </div>
+      <div id="categoryStats"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 底部导航（③ 已删除设置tab，① 严格对称：首页/明细/空/统计/更多 → 留空给FAB居中） -->
+<div class="tab-bar">
+  <div class="tab-bar-item active" onclick="switchTab('home')" id="t-home">
+    <div class="tab-bar-icon">🏠</div>
+    <div>首页</div>
+  </div>
+  <div class="tab-bar-item" onclick="switchTab('records')" id="t-records">
+    <div class="tab-bar-icon">📋</div>
+    <div>明细</div>
+  </div>
+  <div class="tab-spacer"></div>
+  <div class="tab-bar-item" onclick="switchTab('stats')" id="t-stats">
+    <div class="tab-bar-icon">📊</div>
+    <div>统计</div>
+  </div>
+  <div class="tab-bar-item" onclick="showModal('modal-settings-all')">
+    <div class="tab-bar-icon">⋯</div>
+    <div>更多</div>
+  </div>
+</div>
+
+<!-- ① 记账浮动按钮（加大+居中+命名） + 文字标签 -->
+<button class="fab" onclick="openAddModal()" aria-label="记一笔">+</button>
+<div class="fab-label">记一笔</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- ============== 模态框 ============== -->
+
+<!-- ⑤ 记账模态框：内容滚动 + 保存取消按钮永远固定在底部 -->
+<div class="modal-mask" id="modal-add">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="addModalTitle">记一笔</div>
+
+    <div class="modal-scroll-body">
+      <div class="type-toggle">
+        <div class="type-btn active-expense" id="type-expense" onclick="setType('expense')">支出</div>
+        <div class="type-btn" id="type-income" onclick="setType('income')">收入</div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">金额</label>
+        <div class="amount-input-wrap">
+          <span class="currency-symbol">¥</span>
+          <input type="number" id="amountInput" class="amount-input" placeholder="0.00" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">分类</label>
+        <div class="categories-grid" id="categoriesGrid"></div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">日期</label>
+        <input type="date" id="dateInput" class="form-input">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">备注（选填）</label>
+        <input type="text" id="noteInput" class="form-input" placeholder="写点什么...">
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="hideModal('modal-add')">取消</button>
+        <button class="btn btn-primary" onclick="saveRecord()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ④ 左上角「我」—— 用户管理 + 切换 + 添加（新入口） -->
+<div class="modal-mask" id="modal-me">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👤 切换用户</div>
+    <p style="font-size:12px;color:#8e8e93;margin-bottom:14px;padding:0 4px;text-align:center;">
+      每位家人数据各自独立保密，点击头像就能切换
+    </p>
+
+    <div class="modal-scroll-body">
+      <div id="meUserList" class="user-list"></div>
+
+      <!-- ④ 添加新用户区 -->
+      <div id="meAddInputWrap" class="me-add-input-wrap hidden">
+        <input type="text" id="meNewUserName" class="form-input" placeholder="用户名如：爸爸、妈妈">
+        <button class="btn btn-primary" onclick="addUserFromMe()">添加</button>
+      </div>
+
+      <div id="meAddCard" class="me-add-card" onclick="toggleMeAddInput()">
+        <span style="font-size:17px;">＋</span>
+        <span>添加新用户</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="hideModal('modal-me')">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ③ 设置全部合并：原顶部快捷 + 原设置页4项 + 用户管理 = 统一入口 -->
+<div class="modal-mask" id="modal-settings-all">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ 设置</div>
+
+    <div class="modal-scroll-body">
+      <div class="card" style="box-shadow:none;padding:0;">
+        <div class="settings-item" onclick="hideModal('modal-settings-all');showModal('modal-users')">
+          <div class="settings-left">
+            <div class="settings-icon" style="background:#eaf4ff;">👥</div>
+            <div class="settings-label">用户管理（家人独立账号）</div>
+          </div>
+          <div class="settings-arrow">›</div>
+        </div>
+        <div class="settings-item" onclick="hideModal('modal-settings-all');showModal('modal-github')">
+          <div class="settings-left">
+            <div class="settings-icon" style="background:#e5e5ea;">☁️</div>
+            <div class="settings-label">GitHub 备份</div>
+          </div>
+          <div class="settings-arrow">›</div>
+        </div>
+        <div class="settings-item" onclick="hideModal('modal-settings-all');showModal('modal-export')">
+          <div class="settings-left">
+            <div class="settings-icon" style="background:#d5f5e0;">📤</div>
+            <div class="settings-label">导出 / 导入数据</div>
+          </div>
+          <div class="settings-arrow">›</div>
+        </div>
+        <div class="settings-item" onclick="hideModal('modal-settings-all');showModal('modal-about')">
+          <div class="settings-left">
+            <div class="settings-icon" style="background:#fff5e5;">ℹ️</div>
+            <div class="settings-label">关于</div>
+          </div>
+          <div class="settings-arrow">›</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="hideModal('modal-settings-all')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 已废弃旧顶部快捷设置（原modal-settings），功能已合并到上面 modal-settings-all -->
+<!-- 旧顶部快捷设置（保留ID避免JS错误，功能不再使用） -->
+<div class="modal-mask" id="modal-settings">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">快捷设置</div>
+    <div class="modal-scroll-body">
+    <div class="card" style="box-shadow:none;padding:0;">
+      <div class="settings-item" onclick="hideModal('modal-settings');showModal('modal-users')">
+        <div class="settings-left">
+          <div class="settings-icon" style="background:#eaf4ff;">👥</div>
+          <div class="settings-label">用户管理</div>
+        </div>
+        <div class="settings-arrow">›</div>
+      </div>
+      <div class="settings-item" onclick="hideModal('modal-settings');showModal('modal-github')">
+        <div class="settings-left">
+          <div class="settings-icon" style="background:#e5e5ea;">☁️</div>
+          <div class="settings-label">GitHub 备份</div>
+        </div>
+        <div class="settings-arrow">›</div>
+      </div>
+      <div class="settings-item" onclick="hideModal('modal-settings');showModal('modal-export')">
+        <div class="settings-left">
+          <div class="settings-icon" style="background:#d5f5e0;">📤</div>
+          <div class="settings-label">导出导入数据</div>
+        </div>
+        <div class="settings-arrow">›</div>
+      </div>
+    </div>
+    </div>
+    <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="hideModal('modal-settings')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 用户管理模态框 -->
+<div class="modal-mask" id="modal-users">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">用户管理</div>
+
+    <div class="modal-scroll-body">
+    <p style="font-size:13px;color:#8e8e93;margin-bottom:16px;padding:0 4px;">
+      💡 每位家人使用独立账号，数据完全隔离，各自保密
+    </p>
+    <div id="userList" class="user-list"></div>
+    
+    <div class="form-group">
+      <label class="form-label">添加新用户</label>
+      <div class="btn-group">
+        <input type="text" id="newUserName" class="form-input" placeholder="用户名（如：爸爸、妈妈）" style="grid-column: span 1;">
+        <button class="btn btn-primary" onclick="addUser()" style="padding:0 16px;">添加</button>
+      </div>
+    </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="hideModal('modal-users')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- GitHub备份模态框 -->
+<div class="modal-mask" id="modal-github">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">GitHub 备份</div>
+
+    <div class="modal-scroll-body">
+    <p style="font-size:13px;color:#8e8e93;margin-bottom:16px;padding:0 4px;">
+      🔒 数据会加密存储在你的私人 GitHub 仓库，永久保存
+    </p>
+    
+    <div style="background:#fff5e5;border-radius:12px;padding:14px;margin-bottom:16px;">
+      <p style="font-size:13px;color:#a25a00;line-height:1.9;margin-bottom:8px;">
+        👋 Nicole，你好！用户名已自动填好 ✓<br>
+        请按顺序完成下面 <b>2步</b>（按钮点不动就用下面的【复制地址】）：
+      </p>
+
+      <a href="https://github.com/new?name=family-accounts&private=1&description=Nicole家庭记账本备份&auto_init=1" rel="noopener"
+         style="display:block;text-decoration:none;padding:12px 14px;border-radius:12px;background:#ff9500;color:white;font-weight:700;font-size:14px;text-align:center;margin-bottom:8px;">
+        1️⃣ 点这里 → 创建仓库
+      </a>
+      <div style="background:white;border:1px dashed #e5c38a;border-radius:8px;padding:8px 10px;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#0059cc;word-break:break-all;user-select:all;-webkit-user-select:all;margin-bottom:12px;">
+        https://github.com/new?name=family-accounts&private=1&description=Nicole家庭记账本备份&auto_init=1
+      </div>
+
+      <a href="https://github.com/settings/tokens/new?scopes=repo&description=记账本备份永久有效" rel="noopener"
+         style="display:block;text-decoration:none;padding:12px 14px;border-radius:12px;background:#af52de;color:white;font-weight:700;font-size:14px;text-align:center;margin-bottom:8px;">
+        2️⃣ 点这里 → 创建Token密钥
+      </a>
+      <div style="background:white;border:1px dashed #d4b3e5;border-radius:8px;padding:8px 10px;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#0059cc;word-break:break-all;user-select:all;-webkit-user-select:all;">
+        https://github.com/settings/tokens/new?scopes=repo&description=记账本备份永久有效
+      </div>
+
+      <div style="margin-top:10px;font-size:12px;color:#6b4400;line-height:1.6;">
+        💡 <b>小贴士：</b>如果点按钮没反应 → <b>长按上面的地址框</b> → 全选 → 拷贝 → 打开新的 Safari 标签页 → 粘贴到地址栏访问即可。
+      </div>
+    </div>
+    
+    <div class="config-section">
+      <label class="form-label">GitHub 用户名（已自动填好✓）</label>
+      <input type="text" id="githubUser" class="form-input" value="Nicole-770" readonly style="background:#f0f0f0;color:#8e8e93;">
+    </div>
+    
+    <div class="config-section">
+      <label class="form-label">仓库名称（已自动填好✓，建议不改）</label>
+      <input type="text" id="githubRepo" class="form-input" value="family-accounts">
+      <div class="config-hint">如果你改了名字，这里也要改成一样的</div>
+    </div>
+    
+    <div class="config-section">
+      <label class="form-label">Token 访问密钥（唯一需要你粘贴的）</label>
+      <input type="password" id="githubToken" class="form-input" placeholder="👉 点上面第2步创建后，粘贴在这里" style="border-color:#007aff;">
+      <div class="config-hint">
+        🔐 这串密钥只保存在你自己手机上，绝不上传任何地方
+      </div>
+    </div>
+    
+    <div class="backup-info" id="backupInfo"></div>
+    
+    <div class="btn-group" style="margin-top:16px;">
+      <button class="btn btn-success" onclick="saveGithubConfig()">💾 保存配置</button>
+      <button class="btn btn-primary" onclick="backupToGithub()">⬆️ 立即备份</button>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:12px;" onclick="restoreFromGithub()">⬇️ 从 GitHub 恢复数据</button>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="hideModal('modal-github')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导出导入模态框 -->
+<div class="modal-mask" id="modal-export">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">导出 / 导入数据</div>
+
+    <div class="modal-scroll-body">
+    <div class="card" style="box-shadow:none;background:#fafafa;padding:14px;margin-bottom:16px;">
+      <p style="font-size:13px;color:#3c3c43;line-height:1.7;">
+        <strong>📤 导出数据：</strong>生成一份数据文件，可保存到「文件」App或发送给他人备份<br><br>
+        <strong>📥 导入数据：</strong>从之前导出的文件恢复数据（会合并到当前用户）
+      </p>
+    </div>
+    
+    <div class="btn-group" style="margin-bottom:16px;">
+      <button class="btn btn-success" onclick="exportData()">📤 导出当前用户数据</button>
+      <button class="btn btn-primary" onclick="exportAllData()">📦 导出全部用户数据</button>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">从文件导入</label>
+      <input type="file" id="importFile" class="form-input" accept=".json" style="padding:10px;">
+    </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="hideModal('modal-export')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 关于模态框 -->
+<div class="modal-mask" id="modal-about">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">关于 家庭记账本</div>
+
+    <div class="modal-scroll-body">
+    <div style="text-align:center;padding:20px 0;">
+      <div style="font-size:60px;">💰</div>
+      <h3 style="margin-top:10px;">家庭记账本</h3>
+      <p style="color:#8e8e93;font-size:14px;margin-top:6px;">版本 2.0.0</p>
+    </div>
+    <div style="font-size:14px;line-height:1.8;color:#3c3c43;padding:0 8px;">
+      ✅ 多人使用，数据各自独立隔离<br>
+      ✅ 数据保存在本机，永久不丢失<br>
+      ✅ 支持备份到 GitHub 仓库<br>
+      ✅ 无需网络，离线可用<br>
+      ✅ 无广告，完全免费
+    </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="hideModal('modal-about')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal-mask" id="modal-confirm">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:340px;border-radius:16px;margin:auto;">
+    <div class="modal-title" id="confirmTitle">确认</div>
+    <p id="confirmMessage" style="text-align:center;color:#3c3c43;margin-bottom:20px;font-size:15px;"></p>
+    <div class="btn-group">
+      <button class="btn btn-secondary" onclick="hideModal('modal-confirm')">取消</button>
+      <button class="btn btn-danger" id="confirmBtn" onclick="doConfirm()">删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============== 全局数据 ==============
+const EXPENSE_CATEGORIES = [
+  { id: 'food', name: '餐饮', emoji: '🍜', color: '#ff9500' },
+  { id: 'transport', name: '交通', emoji: '🚗', color: '#007aff' },
+  { id: 'shopping', name: '购物', emoji: '🛍️', color: '#ff2d55' },
+  { id: 'entertainment', name: '娱乐', emoji: '🎮', color: '#af52de' },
+  { id: 'housing', name: '居家', emoji: '🏠', color: '#5ac8fa' },
+  { id: 'medical', name: '医疗', emoji: '💊', color: '#ff3b30' },
+  { id: 'education', name: '学习', emoji: '📚', color: '#34c759' },
+  { id: 'travel', name: '旅行', emoji: '✈️', color: '#5856d6' },
+  { id: 'communication', name: '通讯', emoji: '📱', color: '#00c7be' },
+  { id: 'gift', name: '礼物', emoji: '🎁', color: '#ff6b81' },
+  { id: 'pet', name: '宠物', emoji: '🐶', color: '#a2845e' },
+  { id: 'other_e', name: '其他', emoji: '💡', color: '#8e8e93' }
+];
+
+const INCOME_CATEGORIES = [
+  { id: 'salary', name: '工资', emoji: '💼', color: '#34c759' },
+  { id: 'bonus', name: '奖金', emoji: '🎖️', color: '#ff9500' },
+  { id: 'investment', name: '理财', emoji: '📈', color: '#5856d6' },
+  { id: 'business', name: '生意', emoji: '🏪', color: '#007aff' },
+  { id: 'redpacket', name: '红包', emoji: '🧧', color: '#ff3b30' },
+  { id: 'refund', name: '退款', emoji: '↩️', color: '#5ac8fa' },
+  { id: 'rent', name: '租金', emoji: '🏢', color: '#af52de' },
+  { id: 'other_i', name: '其他', emoji: '💰', color: '#8e8e93' }
+];
+
+const USER_COLORS = ['#007aff','#ff9500','#ff2d55','#34c759','#af52de','#5856d6','#ff3b30','#5ac8fa'];
+const USER_AVATARS = ['👨','👩','👴','👵','👦','👧','🧑','👱','👸','🤴'];
+
+let currentType = 'expense';
+let selectedCategory = null;
+let editingRecordId = null;
+let currentFilter = 'all';
+let statsPeriod = 'month';
+let statType = 'expense';
+let confirmCallback = null;
+
+// ============== 数据存储 ==============
+function getData() {
+  try {
+    const data = localStorage.getItem('familyAccountBook');
+    let d = data ? JSON.parse(data) : null;
+    // Nicole：自动从一键配置(auto.html)写入的存储读取并迁移
+    let migrated = false;
+    if (!d) d = { users: [], currentUserId: null, records: {}, github: null };
+    try {
+      const a = localStorage.getItem('nicole_accounts_data');
+      if (a) {
+        const o = JSON.parse(a);
+        if (o && o.config && (o.config.githubToken || o.config.githubUser)) {
+          if (!d.github) d.github = {};
+          if (!d.github.username && o.config.githubUser) { d.github.username = o.config.githubUser; migrated = true; }
+          if (!d.github.repo && o.config.githubRepo)     { d.github.repo = o.config.githubRepo; migrated = true; }
+          if (!d.github.token && o.config.githubToken)   { d.github.token = o.config.githubToken; migrated = true; d.github.savedAt = Date.now(); }
+        }
+      }
+      const t = localStorage.getItem('nicole_gh_token');
+      if (t) {
+        if (!d.github) d.github = {};
+        if (!d.github.token) { d.github.token = t; d.github.savedAt = Date.now(); migrated = true; }
+        if (!d.github.username) d.github.username = localStorage.getItem('nicole_gh_user') || 'NICOLE-770';
+        if (!d.github.repo)     d.github.repo     = localStorage.getItem('nicole_gh_repo') || 'family-accounts';
+      }
+    } catch(e) {}
+    if (migrated) saveData(d);
+    return d;
+  } catch(e) {}
+  return { users: [], currentUserId: null, records: {}, github: null };
+}
+
+function saveData(data) {
+  localStorage.setItem('familyAccountBook', JSON.stringify(data));
+}
+
+function getCurrentUser() {
+  const data = getData();
+  if (!data.currentUserId && data.users.length > 0) {
+    data.currentUserId = data.users[0].id;
+    saveData(data);
+  }
+  return data.users.find(u => u.id === data.currentUserId) || null;
+}
+
+function getUserRecords(userId) {
+  const data = getData();
+  return data.records[userId] || [];
+}
+
+function saveUserRecords(userId, records) {
+  const data = getData();
+  data.records[userId] = records;
+  saveData(data);
+}
+
+function uuid() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+// ============== 用户管理 ==============
+function renderUserSelect() {
+  const data = getData();
+  const select = document.getElementById('currentUserSelect');
+  // 新「我」按钮（兼容旧 select，如果DOM里有也填充）
+  if (select) {
+    select.innerHTML = '';
+    data.users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.id;
+      opt.textContent = u.avatar + ' ' + u.name;
+      if (u.id === data.currentUserId) opt.selected = true;
+      select.appendChild(opt);
+    });
+  }
+  // ④ 渲染左上角「我」按钮（3处页面各一份）
+  const current = getCurrentUser();
+  const displayName = current ? current.name : '我';
+  const avatar = current ? current.avatar : '👤';
+  ['Top','Records','Stats'].forEach(suffix => {
+    const nameEl = document.getElementById('meName' + suffix);
+    const avEl = document.getElementById('meAvatar' + suffix);
+    if (nameEl) nameEl.textContent = displayName;
+    if (avEl) avEl.textContent = avatar;
+  });
+}
+
+function switchUser(userId) {
+  const data = getData();
+  data.currentUserId = userId;
+  saveData(data);
+  selectedCategory = null;
+  refreshAll();
+  const u = data.users.find(x => x.id === userId);
+  showToast('已切换到 ' + (u ? (u.avatar + ' ' + u.name) : '用户'));
+}
+
+// ============== ④ 「我」弹窗用户卡片渲染 & 切换 & 添加 ==============
+function renderMeUserList() {
+  const data = getData();
+  const container = document.getElementById('meUserList');
+  if (!container) return;
+  if (data.users.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="padding:30px 10px;"><div class="empty-emoji">👤</div><div class="empty-text">还没有用户，点下面「添加新用户」</div></div>';
+    return;
+  }
+  container.innerHTML = data.users.map(u => {
+    const records = (data.records[u.id] || []).length;
+    const isCurrent = u.id === data.currentUserId;
+    return `
+      <div class="me-user-card ${isCurrent ? 'is-current' : ''}" onclick="switchUserFromMe('${u.id}')">
+        <div class="user-avatar" style="background:${u.color}33;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;margin-right:12px;">${u.avatar}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:600;margin-bottom:2px;">${u.name} ${isCurrent ? '<span class="current-tag" style="margin-left:4px;">当前</span>' : ''}</div>
+          <div style="font-size:12px;color:#8e8e93;">${records} 条记录</div>
+        </div>
+        <div class="me-user-check">${isCurrent ? '✓' : ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function switchUserFromMe(userId) {
+  switchUser(userId);
+  renderMeUserList();   // 立刻更新当前用户勾选状态
+}
+
+function toggleMeAddInput() {
+  const w = document.getElementById('meAddInputWrap');
+  w.classList.toggle('hidden');
+  if (!w.classList.contains('hidden')) {
+    setTimeout(() => document.getElementById('meNewUserName')?.focus(), 100);
+  }
+}
+
+function addUserFromMe() {
+  const input = document.getElementById('meNewUserName');
+  const name = (input?.value || '').trim();
+  if (!name) { showToast('请输入用户名'); return; }
+  const data = getData();
+  const newUser = {
+    id: uuid(),
+    name: name,
+    avatar: USER_AVATARS[data.users.length % USER_AVATARS.length],
+    color: USER_COLORS[data.users.length % USER_COLORS.length],
+    createdAt: Date.now()
+  };
+  data.users.push(newUser);
+  if (!data.currentUserId) data.currentUserId = newUser.id;
+  saveData(data);
+  input.value = '';
+  renderMeUserList();
+  renderUserList();
+  renderUserSelect();
+  refreshAll();
+  showToast('🎉 添加成功：' + newUser.avatar + ' ' + newUser.name);
+}
+
+function renderUserList() {
+  const data = getData();
+  const list = document.getElementById('userList');
+  if (!list) return;
+  if (data.users.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:30px;"><div class="empty-emoji">👤</div><div class="empty-text">还没有用户，先添加一个吧</div></div>';
+    return;
+  }
+  list.innerHTML = data.users.map(u => {
+    const records = (data.records[u.id] || []).length;
+    const isCurrent = u.id === data.currentUserId;
+    return `
+      <div class="user-row">
+        <div class="user-avatar" style="background:${u.color}22;">${u.avatar}</div>
+        <div class="user-info">
+          <div class="user-name">${u.name} ${isCurrent ? '<span class="current-tag">当前</span>' : ''}</div>
+          <div class="user-sub">${records} 条记录</div>
+        </div>
+        ${!isCurrent ? `<button class="delete-btn" onclick="deleteUser('${u.id}')">删除</button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function addUser() {
+  const input = document.getElementById('newUserName');
+  const name = input.value.trim();
+  if (!name) { showToast('请输入用户名'); return; }
+  const data = getData();
+  const newUser = {
+    id: uuid(),
+    name: name,
+    avatar: USER_AVATARS[data.users.length % USER_AVATARS.length],
+    color: USER_COLORS[data.users.length % USER_COLORS.length],
+    createdAt: Date.now()
+  };
+  data.users.push(newUser);
+  if (!data.currentUserId) data.currentUserId = newUser.id;
+  saveData(data);
+  input.value = '';
+  renderUserList();
+  renderUserSelect();
+  refreshAll();
+  showToast('用户添加成功');
+}
+
+function deleteUser(userId) {
+  const data = getData();
+  const user = data.users.find(u => u.id === userId);
+  if (!user) return;
+  showConfirm('删除用户', `确定删除「${user.name}」？该用户的所有记账数据也会被删除，此操作不可恢复！`, () => {
+    const data = getData();
+    data.users = data.users.filter(u => u.id !== userId);
+    delete data.records[userId];
+    if (data.currentUserId === userId) {
+      data.currentUserId = data.users.length > 0 ? data.users[0].id : null;
+    }
+    saveData(data);
+    renderUserList();
+    renderUserSelect();
+    refreshAll();
+    showToast('已删除用户');
+  });
+}
+
+// ============== 记账功能 ==============
+function openAddModal(recordId = null) {
+  editingRecordId = recordId;
+  if (recordId) {
+    const user = getCurrentUser();
+    if (!user) { showToast('请先创建用户'); return; }
+    const records = getUserRecords(user.id);
+    const r = records.find(x => x.id === recordId);
+    if (r) {
+      document.getElementById('addModalTitle').textContent = '编辑记录';
+      currentType = r.type;
+      updateTypeUI();
+      document.getElementById('amountInput').value = r.amount;
+      document.getElementById('dateInput').value = r.date;
+      document.getElementById('noteInput').value = r.note || '';
+      selectedCategory = r.categoryId;
+      renderCategories();
+      showModal('modal-add');
+      return;
+    }
+  }
+  document.getElementById('addModalTitle').textContent = '记一笔';
+  currentType = 'expense';
+  selectedCategory = null;
+  document.getElementById('amountInput').value = '';
+  document.getElementById('dateInput').value = formatDate(new Date());
+  document.getElementById('noteInput').value = '';
+  updateTypeUI();
+  renderCategories();
+  showModal('modal-add');
+  setTimeout(() => document.getElementById('amountInput').focus(), 300);
+}
+
+function updateTypeUI() {
+  const e = document.getElementById('type-expense');
+  const i = document.getElementById('type-income');
+  e.className = 'type-btn' + (currentType === 'expense' ? ' active-expense' : '');
+  i.className = 'type-btn' + (currentType === 'income' ? ' active-income' : '');
+}
+
+function setType(type) {
+  if (currentType === type) return;
+  currentType = type;
+  selectedCategory = null;
+  updateTypeUI();
+  renderCategories();
+}
+
+function renderCategories() {
+  const cats = currentType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const grid = document.getElementById('categoriesGrid');
+  grid.innerHTML = cats.map(c => `
+    <div class="category-item ${selectedCategory === c.id ? 'selected' : ''}" onclick="selectCategory('${c.id}')">
+      <div class="category-emoji">${c.emoji}</div>
+      <div class="category-name">${c.name}</div>
+    </div>
+  `).join('');
+}
+
+function selectCategory(id) {
+  selectedCategory = id;
+  renderCategories();
+}
+
+function saveRecord() {
+  const user = getCurrentUser();
+  if (!user) { showToast('请先创建用户'); return; }
+  
+  const amount = parseFloat(document.getElementById('amountInput').value);
+  if (!amount || amount <= 0) { showToast('请输入有效金额'); return; }
+  if (!selectedCategory) { showToast('请选择分类'); return; }
+  
+  const date = document.getElementById('dateInput').value;
+  if (!date) { showToast('请选择日期'); return; }
+  
+  const note = document.getElementById('noteInput').value.trim();
+  const cats = currentType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const cat = cats.find(c => c.id === selectedCategory);
+  
+  const records = getUserRecords(user.id);
+  
+  if (editingRecordId) {
+    const idx = records.findIndex(r => r.id === editingRecordId);
+    if (idx >= 0) {
+      records[idx] = {
+        ...records[idx],
+        type: currentType,
+        amount: amount,
+        categoryId: cat.id,
+        categoryName: cat.name,
+        categoryEmoji: cat.emoji,
+        categoryColor: cat.color,
+        date: date,
+        note: note,
+        updatedAt: Date.now()
+      };
+    }
+  } else {
+    records.unshift({
+      id: uuid(),
+      type: currentType,
+      amount: amount,
+      categoryId: cat.id,
+      categoryName: cat.name,
+      categoryEmoji: cat.emoji,
+      categoryColor: cat.color,
+      date: date,
+      note: note,
+      createdAt: Date.now()
+    });
+  }
+  
+  saveUserRecords(user.id, records);
+  hideModal('modal-add');
+  refreshAll();
+  showToast(editingRecordId ? '已更新记录' : '记账成功 🎉');
+}
+
+function deleteRecord(recordId) {
+  showConfirm('删除记录', '确定删除这条记录吗？', () => {
+    const user = getCurrentUser();
+    let records = getUserRecords(user.id);
+    records = records.filter(r => r.id !== recordId);
+    saveUserRecords(user.id, records);
+    refreshAll();
+    showToast('已删除记录');
+  });
+}
+
+// ============== 记录渲染 ==============
+function groupByDate(records) {
+  const groups = {};
+  records.forEach(r => {
+    if (!groups[r.date]) groups[r.date] = { records: [], income: 0, expense: 0 };
+    groups[r.date].records.push(r);
+    if (r.type === 'income') groups[r.date].income += r.amount;
+    else groups[r.date].expense += r.amount;
+  });
+  return Object.entries(groups).sort((a,b) => b[0].localeCompare(a[0]));
+}
+
+function renderRecords(containerId, records, limit = null) {
+  const container = document.getElementById(containerId);
+  if (!records || records.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-emoji">📝</div><div class="empty-text">还没有记录，点右下角 + 记一笔吧</div></div>';
+    return;
+  }
+  
+  const filtered = currentFilter === 'all' ? records : records.filter(r => r.type === currentFilter);
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-emoji">🔍</div><div class="empty-text">当前筛选下没有记录</div></div>';
+    return;
+  }
+  
+  const toShow = limit ? filtered.slice(0, limit) : filtered;
+  const groups = groupByDate(toShow);
+  
+  container.innerHTML = groups.map(([date, g]) => `
+    <div class="date-group">
+      <div class="date-header">
+        <span>${formatDateLabel(date)}</span>
+        <span>
+          ${g.income > 0 ? `<span class="income" style="margin-right:10px;">收 ¥${g.income.toFixed(2)}</span>` : ''}
+          ${g.expense > 0 ? `<span class="expense">支 ¥${g.expense.toFixed(2)}</span>` : ''}
+        </span>
+      </div>
+      ${g.records.map(r => `
+        <div class="record-item">
+          <div class="record-icon" style="background:${r.categoryColor}22;">${r.categoryEmoji}</div>
+          <div class="record-info">
+            <div class="record-category">${r.categoryName}</div>
+            <div class="record-note">${r.note || '无备注'}</div>
+          </div>
+          <div class="record-actions">
+            <button class="record-edit-btn" onclick="event.stopPropagation();openAddModal('${r.id}')">编辑</button>
+            <button class="record-delete-btn" onclick="event.stopPropagation();deleteRecord('${r.id}')">删除</button>
+          </div>
+          <div class="record-amount ${r.type === 'income' ? 'income' : 'expense'}">
+            ${r.type === 'income' ? '+' : '-'}¥${r.amount.toFixed(2)}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function filterRecords(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const user = getCurrentUser();
+  if (user) renderRecords('allRecordsList', getUserRecords(user.id));
+}
+
+// ============== 首页概览 ==============
+function renderSummary() {
+  const user = getCurrentUser();
+  const monthLabel = formatDate(new Date()).substring(0, 7);
+  let income = 0, expense = 0;
+  if (user) {
+    const records = getUserRecords(user.id);
+    records.forEach(r => {
+      if (r.date.startsWith(monthLabel)) {
+        if (r.type === 'income') income += r.amount;
+        else expense += r.amount;
+      }
+    });
+  }
+  document.getElementById('monthIncome').textContent = '¥' + income.toFixed(2);
+  document.getElementById('monthExpense').textContent = '¥' + expense.toFixed(2);
+  document.getElementById('monthBalance').textContent = '¥' + (income - expense).toFixed(2);
+}
+
+// ============== 统计 ==============
+function setStatsPeriod(p, el) {
+  statsPeriod = p;
+  document.querySelectorAll('.stats-period').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderStats();
+}
+
+function toggleStatType() {
+  statType = statType === 'expense' ? 'income' : 'expense';
+  document.getElementById('statTypeToggle').textContent = statType === 'expense' ? '切换到收入 ›' : '切换到支出 ›';
+  document.getElementById('catStatTitle').textContent = statType === 'expense' ? '支出分类' : '收入分类';
+  renderStats();
+}
+
+function getDateRange() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let start, end;
+  
+  switch (statsPeriod) {
+    case 'week':
+      const day = today.getDay() || 7;
+      start = new Date(today); start.setDate(today.getDate() - day + 1);
+      end = new Date(start); end.setDate(start.getDate() + 6);
+      break;
+    case 'month':
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      break;
+    case 'year':
+      start = new Date(now.getFullYear(), 0, 1);
+      end = new Date(now.getFullYear(), 11, 31);
+      break;
+    case 'all':
+    default:
+      return { start: null, end: null };
+  }
+  return { start: formatDate(start), end: formatDate(end) };
+}
+
+function inRange(dateStr, range) {
+  if (!range.start && !range.end) return true;
+  return dateStr >= range.start && dateStr <= range.end;
+}
+
+function renderStats() {
+  const user = getCurrentUser();
+  if (!user) return;
+  const records = getUserRecords(user.id);
+  const range = getDateRange();
+  const filtered = records.filter(r => inRange(r.date, range));
+  
+  let income = 0, expense = 0;
+  filtered.forEach(r => {
+    if (r.type === 'income') income += r.amount;
+    else expense += r.amount;
+  });
+  
+  document.getElementById('statsIncome').textContent = '¥' + income.toFixed(2);
+  document.getElementById('statsExpense').textContent = '¥' + expense.toFixed(2);
+  document.getElementById('statsNet').textContent = '¥' + (income - expense).toFixed(2);
+  document.getElementById('statsNet').className = 'summary-value ' + ((income - expense) >= 0 ? 'income' : 'expense');
+  
+  renderTrendChart(filtered);
+  renderCategoryStats(filtered);
+}
+
+function renderTrendChart(filtered) {
+  const chart = document.getElementById('trendChart');
+  let groups = {}, labels = [];
+  
+  if (statsPeriod === 'week') {
+    const weekdays = ['周一','周二','周三','周四','周五','周六','周日'];
+    const range = getDateRange();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(range.start); d.setDate(d.getDate() + i);
+      const key = formatDate(d);
+      labels.push({ key, label: weekdays[i] });
+      groups[key] = { expense: 0, income: 0 };
+    }
+  } else if (statsPeriod === 'month') {
+    const now = new Date();
+    const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const dayCount = Math.min(days, 31);
+    const step = Math.ceil(dayCount / 15);
+    for (let i = 1; i <= dayCount; i += step) {
+      const key = `${formatDate(now).substring(0,7)}-${String(i).padStart(2,'0')}`;
+      labels.push({ key: key.substring(0,10), label: i + '日' });
+      groups[key.substring(0,10)] = { expense: 0, income: 0 };
+    }
+  } else if (statsPeriod === 'year') {
+    const year = new Date().getFullYear();
+    for (let m = 0; m < 12; m++) {
+      const key = `${year}-${String(m+1).padStart(2,'0')}`;
+      labels.push({ key, label: (m+1) + '月' });
+      groups[key] = { expense: 0, income: 0 };
+    }
+  } else {
+    const years = [...new Set(filtered.map(r => r.date.substring(0,4)))].sort();
+    if (years.length === 0) years.push(String(new Date().getFullYear()));
+    years.forEach(y => {
+      labels.push({ key: y, label: y + '年' });
+      groups[y] = { expense: 0, income: 0 };
+    });
+  }
+  
+  filtered.forEach(r => {
+    let key;
+    if (statsPeriod === 'year') key = r.date.substring(0, 7);
+    else if (statsPeriod === 'all') key = r.date.substring(0, 4);
+    else key = r.date;
+    
+    if (statsPeriod === 'year') {
+      const found = labels.find(l => key.startsWith(l.key));
+      if (found) {
+        groups[found.key][r.type] += r.amount;
+      }
+    } else if (statsPeriod === 'all') {
+      if (groups[key]) groups[key][r.type] += r.amount;
+    } else {
+      if (groups[key]) groups[key][r.type] += r.amount;
+    }
+  });
+  
+  let max = 1;
+  labels.forEach(l => {
+    const g = groups[l.key] || { expense: 0, income: 0 };
+    const sum = statType === 'expense' ? g.expense : (statType === 'income' ? g.income : g.expense + g.income);
+    if (sum > max) max = sum;
+  });
+  
+  const useColor = statType === 'expense' ? '#ff453a' : '#30d158';
+  
+  chart.innerHTML = labels.map(l => {
+    const g = groups[l.key] || { expense: 0, income: 0 };
+    const val = statType === 'expense' ? g.expense : g.income;
+    const h = Math.max(2, (val / max) * 140);
+    return `
+      <div class="chart-bar" title="${l.label}: ¥${val.toFixed(2)}">
+        <div class="chart-bar-fill" style="height:${h}px;background:${useColor}88;"></div>
+        <div class="chart-bar-label">${l.label}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCategoryStats(filtered) {
+  const container = document.getElementById('categoryStats');
+  const catMap = {};
+  filtered.filter(r => r.type === statType).forEach(r => {
+    if (!catMap[r.categoryId]) {
+      catMap[r.categoryId] = {
+        name: r.categoryName,
+        emoji: r.categoryEmoji,
+        color: r.categoryColor,
+        amount: 0
+      };
+    }
+    catMap[r.categoryId].amount += r.amount;
+  });
+  
+  const cats = Object.values(catMap).sort((a,b) => b.amount - a.amount);
+  const total = cats.reduce((s,c) => s + c.amount, 0) || 1;
+  
+  if (cats.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="padding:30px 0;"><div class="empty-emoji">📊</div><div class="empty-text">暂无数据</div></div>';
+    return;
+  }
+  
+  container.innerHTML = cats.map(c => `
+    <div class="category-stat-row">
+      <div class="cat-stat-icon" style="background:${c.color}22;">${c.emoji}</div>
+      <div class="cat-stat-info">
+        <div class="cat-stat-name">${c.name}</div>
+        <div class="cat-stat-bar-bg">
+          <div class="cat-stat-bar" style="width:${(c.amount/total*100).toFixed(0)}%;background:${c.color};"></div>
+        </div>
+      </div>
+      <div class="cat-stat-right">
+        <div class="cat-stat-amount" style="color:${c.color};">¥${c.amount.toFixed(2)}</div>
+        <div class="cat-stat-percent">${(c.amount/total*100).toFixed(1)}%</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============== 工具函数 ==============
+function formatDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function formatDateLabel(dateStr) {
+  const d = new Date(dateStr);
+  const today = formatDate(new Date());
+  const yesterday = formatDate(new Date(Date.now() - 86400000));
+  if (dateStr === today) return '今天';
+  if (dateStr === yesterday) return '昨天';
+  const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
+  return `${d.getMonth()+1}月${d.getDate()}日 ${weekdays[d.getDay()]}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function showModal(id) {
+  document.getElementById(id).classList.add('show');
+  if (id === 'modal-users') renderUserList();
+  if (id === 'modal-me') { renderMeUserList(); }  // ④ 打开「我」弹窗就渲染
+  if (id === 'modal-github') loadGithubConfig();
+}
+
+function hideModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+document.querySelectorAll('.modal-mask').forEach(m => {
+  m.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+  });
+});
+
+function showConfirm(title, msg, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMessage').textContent = msg;
+  confirmCallback = cb;
+  showModal('modal-confirm');
+}
+
+function doConfirm() {
+  if (confirmCallback) confirmCallback();
+  confirmCallback = null;
+  hideModal('modal-confirm');
+}
+
+// ③ switchTab 已经删掉了 settings 页（功能已合并到右上角⚙️）
+function switchTab(tab) {
+  ['home','records','stats'].forEach(p => {
+    const pageEl = document.getElementById('page-' + p);
+    const tabEl = document.getElementById('t-' + p);
+    if (pageEl) pageEl.classList.toggle('hidden', p !== tab);
+    if (tabEl) tabEl.classList.toggle('active', p === tab);
+  });
+  window.scrollTo({ top: 0, behavior: 'auto' });
+  if (tab === 'records') {
+    const user = getCurrentUser();
+    if (user) renderRecords('allRecordsList', getUserRecords(user.id));
+  }
+  if (tab === 'stats') renderStats();
+}
+
+// ============== GitHub 备份 ==============
+function loadGithubConfig() {
+  const data = getData();
+  const gh = data.github || {};
+  // Nicole-770 用户默认预填
+  document.getElementById('githubUser').value = gh.username || 'Nicole-770';
+  document.getElementById('githubRepo').value = gh.repo || 'family-accounts';
+  document.getElementById('githubToken').value = gh.token || '';
+  updateBackupInfo();
+}
+
+function saveGithubConfig() {
+  const username = document.getElementById('githubUser').value.trim();
+  const repo = document.getElementById('githubRepo').value.trim();
+  const token = document.getElementById('githubToken').value.trim();
+  if (!username || !repo || !token) { showToast('请填写完整配置'); return; }
+  const data = getData();
+  data.github = { username, repo, token, savedAt: Date.now() };
+  saveData(data);
+  updateBackupInfo();
+  showToast('配置已保存');
+}
+
+function updateBackupInfo() {
+  const data = getData();
+  const info = document.getElementById('backupInfo');
+  if (data.github) {
+    info.innerHTML = `
+      <div>✅ 配置已保存 (${new Date(data.github.savedAt).toLocaleString('zh-CN')})</div>
+      ${data.lastBackup ? `<div style="margin-top:4px;">🕐 上次备份: ${new Date(data.lastBackup).toLocaleString('zh-CN')}</div>` : ''}
+    `;
+  }
+}
+
+async function backupToGithub() {
+  const data = getData();
+  if (!data.github) { showToast('请先配置 GitHub'); return; }
+  const user = getCurrentUser();
+  if (!user) { showToast('请先创建用户'); return; }
+  
+  showToast('正在备份...');
+  
+  try {
+    const { username, repo, token } = data.github;
+    const timestamp = new Date().toISOString();
+    const exportData = {
+      version: '1.0',
+      exportedAt: timestamp,
+      app: '家庭记账本',
+      data: data
+    };
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(exportData, null, 2))));
+    const filename = `backup_${formatDate(new Date())}_${Date.now()}.json`;
+    const latestPath = 'latest-backup.json';
+    
+    // 检查 latest 文件是否存在以获取 sha
+    let sha = null;
+    try {
+      const checkResp = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${latestPath}`, {
+        headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (checkResp.ok) {
+        const check = await checkResp.json();
+        sha = check.sha;
+      }
+    } catch(e) {}
+    
+    // 上传 latest-backup.json
+    const body = {
+      message: `Backup ${timestamp}`,
+      content: content
+    };
+    if (sha) body.sha = sha;
+    
+    const resp = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${latestPath}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + token,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || '备份失败');
+    }
+    
+    // 同时带日期另存一份
+    try {
+      await fetch(`https://api.github.com/repos/${username}/${repo}/contents/history/${filename}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'token ' + token,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Archive ${timestamp}`,
+          content: content
+        })
+      }).catch(() => {});
+    } catch(e) {}
+    
+    data.lastBackup = Date.now();
+    saveData(data);
+    updateBackupInfo();
+    showToast('✅ 备份成功！');
+  } catch(e) {
+    console.error(e);
+    showToast('❌ 备份失败: ' + (e.message || '网络错误'));
+  }
+}
+
+async function restoreFromGithub() {
+  const data = getData();
+  if (!data.github) { showToast('请先配置 GitHub'); return; }
+  
+  showConfirm('恢复数据', '从 GitHub 恢复会覆盖当前所有数据，确定继续吗？', async () => {
+    showToast('正在恢复...');
+    try {
+      const { username, repo, token } = data.github;
+      const resp = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/latest-backup.json`, {
+        headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (!resp.ok) throw new Error('无法获取备份文件，请确认已备份过');
+      const file = await resp.json();
+      const content = decodeURIComponent(escape(atob(file.content)));
+      const backup = JSON.parse(content);
+      
+      if (!backup.data) throw new Error('备份数据格式不正确');
+      
+      saveData(backup.data);
+      renderUserSelect();
+      refreshAll();
+      showToast('✅ 恢复成功！');
+    } catch(e) {
+      console.error(e);
+      showToast('❌ 恢复失败: ' + (e.message || '检查网络'));
+    }
+  });
+}
+
+// ============== 导出 / 导入 ==============
+function exportData() {
+  const user = getCurrentUser();
+  if (!user) { showToast('请先创建用户'); return; }
+  const data = getData();
+  const exportObj = {
+    version: '1.0',
+    type: 'single-user',
+    exportedAt: new Date().toISOString(),
+    user: user,
+    records: getUserRecords(user.id)
+  };
+  downloadJSON(exportObj, `${user.name}_记账数据_${formatDate(new Date())}.json`);
+  showToast('导出成功，已下载文件');
+}
+
+function exportAllData() {
+  const data = getData();
+  const exportObj = {
+    version: '1.0',
+    type: 'all-users',
+    exportedAt: new Date().toISOString(),
+    data: data
+  };
+  downloadJSON(exportObj, `全部记账数据_${formatDate(new Date())}.json`);
+  showToast('导出成功，已下载文件');
+}
+
+function downloadJSON(obj, filename) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('importFile').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const obj = JSON.parse(text);
+    
+    if (obj.type === 'all-users' && obj.data) {
+      showConfirm('导入全部数据', '这将覆盖所有用户的数据，确定吗？', () => {
+        saveData(obj.data);
+        renderUserSelect();
+        refreshAll();
+        showToast('✅ 导入成功！');
+      });
+    } else if (obj.type === 'single-user' && obj.user) {
+      showConfirm('导入用户数据', `将合并用户「${obj.user.name}」的数据到当前用户？`, () => {
+        const data = getData();
+        const user = getCurrentUser();
+        let records = getUserRecords(user.id);
+        const existIds = new Set(records.map(r => r.id));
+        obj.records.forEach(r => {
+          if (!existIds.has(r.id)) records.unshift(r);
+        });
+        records.sort((a,b) => b.createdAt - a.createdAt);
+        saveUserRecords(user.id, records);
+        refreshAll();
+        showToast('✅ 导入成功！');
+      });
+    } else {
+      throw new Error('文件格式不正确');
+    }
+  } catch(err) {
+    console.error(err);
+    showToast('❌ 导入失败: ' + (err.message || '文件错误'));
+  }
+  e.target.value = '';
+});
+
+// ============== 初始化 ==============
+function refreshAll() {
+  const data = getData();
+  // 如果没有任何用户，自动创建一个默认用户引导
+  if (data.users.length === 0) {
+    data.users.push({
+      id: uuid(),
+      name: '我',
+      avatar: '👤',
+      color: USER_COLORS[0],
+      createdAt: Date.now()
+    });
+    data.currentUserId = data.users[0].id;
+    saveData(data);
+  }
+  renderUserSelect();
+  renderSummary();
+  const user = getCurrentUser();
+  if (user) {
+    const records = getUserRecords(user.id);
+    renderRecords('recentList', records, 10);
+    renderRecords('allRecordsList', records);
+  }
+  renderStats();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  refreshAll();
+  
+  // 监听键盘事件（数字键）
+  document.getElementById('amountInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') saveRecord();
+  });
+  
+  // 防止双击缩放
+  let lastTouch = 0;
+  document.addEventListener('touchend', function(e) {
+    const now = Date.now();
+    if (now - lastTouch <= 300) e.preventDefault();
+    lastTouch = now;
+  }, { passive: false });
+
+  // 自动移除托管平台注入的遮挡广告条（如 Built by an agent 等）
+  (function removeHostedBanners() {
+    const attempts = 20;
+    let i = 0;
+    function sweep() {
+      // 移除所有固定在底部且可能遮挡的iframe / div / 注入容器
+      document.querySelectorAll('iframe, [class*="remix"], [class*="agent"], [class*="hosted"], [id*="remix"], [id*="agent"]').forEach(function(el){
+        const st = window.getComputedStyle(el);
+        const pos = st.position;
+        const bottom = parseFloat(st.bottom) || 0;
+        const h = el.offsetHeight || 0;
+        if ((pos === 'fixed' || pos === 'sticky' || pos === 'absolute') && bottom <= 5 && h > 0) {
+          el.style.display = 'none';
+          el.remove();
+        }
+        if (el.textContent && /Built by an agent|Remix this site/i.test(el.textContent) && el.offsetHeight > 0) {
+          el.style.display = 'none';
+          el.remove();
+        }
+      });
+      i++;
+      if (i < attempts) setTimeout(sweep, 500);
+    }
+    sweep();
+    // 页面加载后继续检测
+    window.addEventListener('load', function(){ sweep(); });
+  })();
+});
+</script>
+</body>
+</html>
