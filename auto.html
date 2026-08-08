@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nicole · 一键配置记账本</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+  background: linear-gradient(180deg, #eef2ff 0%, #f5f7ff 100%);
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 30px 20px;
+}
+.card {
+  background: white;
+  border-radius: 24px;
+  padding: 38px 26px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 12px 40px rgba(102,126,234,0.15);
+  text-align: center;
+}
+.icon {
+  width: 96px; height: 96px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px;
+  margin: 0 auto 24px;
+  box-shadow: 0 12px 32px rgba(102,126,234,0.35);
+}
+h1 { font-size: 24px; font-weight: 700; margin-bottom: 10px; color: #1c1c1e; }
+.sub { font-size: 14px; color: #8e8e93; line-height: 1.6; margin-bottom: 26px; }
+.box {
+  background: #f7f8ff;
+  border: 2px solid #e0e4ff;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+.row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; }
+.k { color: #8e8e93; }
+.v { color: #1c1c1e; font-weight: 600; font-family: ui-monospace, Menlo, monospace; font-size: 12px; word-break: break-all; max-width: 60%; text-align: right; }
+.ok { color: #34c759; font-weight: 700; }
+.err { color: #ff3b30; font-weight: 700; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%;
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: none;
+  font-size: 17px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
+  box-shadow: 0 8px 24px rgba(0,122,255,0.3);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { background: #c7c7cc; box-shadow: none; cursor: not-allowed; opacity: 0.7; }
+.spinner {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 3px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.status-card {
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #e8f5ff;
+  border-left: 4px solid #007aff;
+  text-align: left;
+  font-size: 13px;
+  color: #00457a;
+  line-height: 1.6;
+  display: none;
+}
+.status-card.show { display: block; }
+.status-card.ok { background: #dcf5e3; border-left-color: #34c759; color: #1b6e2c; }
+.status-card.err { background: #ffe5e5; border-left-color: #ff3b30; color: #7a0f0f; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon" id="icon">🔑</div>
+  <h1 id="title">正在配置记账本…</h1>
+  <p class="sub" id="sub">Nicole 你好！正在自动把密钥写入到记账本。</p>
+
+  <div class="box">
+    <div class="row"><span class="k">GitHub 用户名</span><span class="v" id="u">NICOLE-770</span></div>
+    <div class="row"><span class="k">仓库名称</span><span class="v" id="r">family-accounts</span></div>
+    <div class="row"><span class="k">Token 密钥</span><span class="v" id="t">—</span></div>
+    <div class="row"><span class="k">写入状态</span><span class="v" id="s"><span class="err">等待中…</span></span></div>
+  </div>
+
+  <button class="btn" id="goBtn" disabled>
+    <span class="spinner"></span>
+    <span>正在配置…</span>
+  </button>
+
+  <div class="status-card" id="statusCard"></div>
+</div>
+
+<script>
+(function(){
+  // 从 URL 的 hash 里读取 token（# 后面，不会发到服务器，安全）
+  let token = '';
+  if (location.hash && location.hash.length > 1) {
+    token = decodeURIComponent(location.hash.substring(1)).trim();
+  }
+  // 兼容备用：从 query ?token= 读取
+  if (!token) {
+    const m = location.search.match(/[?&]token=([^&]+)/);
+    if (m) token = decodeURIComponent(m[1]).trim();
+  }
+  const HARDCODED_FALLBACK = ''; // 留空，强制用 URL 传入，更安全
+  if (!token && HARDCODED_FALLBACK) token = HARDCODED_FALLBACK;
+
+  const user = 'NICOLE-770';
+  const repo = 'family-accounts';
+  const targetURL = './记账本.html';
+
+  document.getElementById('t').textContent = token ? token.substring(0, 6) + '••••••••' + token.substring(token.length-4) : '<span class="err">未提供</span>';
+
+  let msg = [];
+
+  function save() {
+    if (!token) {
+      showErr('未检测到 Token 参数。请使用完整的一键配置链接（带 # 号的）。');
+      return false;
+    }
+    try {
+      // 方案1：直接写入记账本原生存储（familyAccountBook）——优先，保证100%读到
+      let d;
+      try {
+        const raw = localStorage.getItem('familyAccountBook');
+        d = raw ? JSON.parse(raw) : null;
+      } catch(e) { d = null; }
+      if (!d || typeof d !== 'object') {
+        d = { users: [], currentUserId: null, records: {}, github: null };
+      }
+      if (!d.github || typeof d.github !== 'object') d.github = {};
+      d.github.username = user;
+      d.github.repo = repo;
+      d.github.token = token;
+      d.github.savedAt = Date.now();
+      localStorage.setItem('familyAccountBook', JSON.stringify(d));
+      msg.push('✅ 记账本主配置已写入（GitHub配置）');
+
+      // 方案2：写 nicole_accounts_data（旧兼容）
+      try {
+        const raw2 = localStorage.getItem('nicole_accounts_data');
+        let d2 = raw2 ? JSON.parse(raw2) : null;
+        if (!d2 || typeof d2 !== 'object') d2 = { users: [], config: {} };
+        if (!d2.config || typeof d2.config !== 'object') d2.config = {};
+        d2.config.githubUser = user;
+        d2.config.githubRepo = repo;
+        d2.config.githubToken = token;
+        localStorage.setItem('nicole_accounts_data', JSON.stringify(d2));
+        msg.push('✅ 兼容配置1已写入');
+      } catch(e) {}
+
+      // 方案3：独立键（最稳，记账本 getData 会自动迁移）
+      try {
+        localStorage.setItem('nicole_gh_user', user);
+        localStorage.setItem('nicole_gh_repo', repo);
+        localStorage.setItem('nicole_gh_token', token);
+        msg.push('✅ 兼容配置2已写入（独立键）');
+      } catch(e) {}
+
+      document.getElementById('s').innerHTML = '<span class="ok">写入成功 ✓</span>';
+      return true;
+    } catch (e) {
+      showErr('写入失败：' + e.message);
+      return false;
+    }
+  }
+
+  function showErr(text) {
+    const c = document.getElementById('statusCard');
+    c.className = 'status-card err show';
+    c.innerHTML = '❌ ' + text;
+    document.getElementById('title').textContent = '配置失败';
+    document.getElementById('icon').textContent = '⚠️';
+    document.getElementById('s').innerHTML = '<span class="err">失败</span>';
+    const btn = document.getElementById('goBtn');
+    btn.disabled = false;
+    btn.querySelector('span:last-child').textContent = '返回重试';
+    btn.onclick = () => location.reload();
+  }
+
+  function done() {
+    document.getElementById('title').textContent = '🎉 配置成功！';
+    document.getElementById('icon').textContent = '✅';
+    document.getElementById('sub').textContent = '密钥已经保存到你手机里了。接下来打开记账本，点右下角「⚙️设置→☁️GitHub备份→立即备份」就好！';
+
+    const c = document.getElementById('statusCard');
+    c.className = 'status-card ok show';
+    c.innerHTML = msg.map(m => '• ' + m).join('<br>') +
+      '<br><br>💡 <b>温馨提示：</b>这串密钥只保存在你自己的这台手机浏览器里，不会上传到任何第三方。';
+
+    const btn = document.getElementById('goBtn');
+    btn.disabled = false;
+    btn.querySelector('.spinner').style.display = 'none';
+    btn.querySelector('span:last-child').textContent = '→ 打开记账本 & 立即备份';
+    btn.onclick = () => {
+      // 清除 URL 里的 token，避免留在浏览器历史
+      try {
+        history.replaceState(null, '', location.pathname);
+      } catch(e) {}
+      location.href = targetURL;
+    };
+
+    // 2 秒后自动跳
+    setTimeout(() => {
+      try { history.replaceState(null, '', location.pathname); } catch(e) {}
+      location.href = targetURL;
+    }, 2000);
+  }
+
+  // 启动
+  setTimeout(() => {
+    if (save()) done();
+  }, 600);
+})();
+</script>
+</body>
+</html>
