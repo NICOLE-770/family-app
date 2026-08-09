@@ -15,7 +15,7 @@ body {
   background: #f2f2f7;
   color: #1c1c1e;
   min-height: 100vh;
-  padding-bottom: 120px;
+  padding-bottom: 92px;   /* 现在只是底部 tab-bar，留92足够 */
   padding-top: env(safe-area-inset-top);
 }
 .container { max-width: 500px; margin: 0 auto; padding: 16px; }
@@ -386,46 +386,11 @@ body {
 .cat-stat-amount { font-size: 14px; font-weight: 600; }
 .cat-stat-percent { font-size: 11px; color: #8e8e93; margin-top: 2px; }
 
-/* ① 浮动按钮 —— 居中，加大，有文字标签「记一笔」 */
-.fab {
-  position: fixed;
-  bottom: calc(92px + env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  width: 70px;
-  height: 70px;
-  background: linear-gradient(135deg, #007aff 0%, #5856d6 100%);
-  color: white;
-  border: 3px solid white;
-  border-radius: 50%;
-  font-size: 32px;
-  font-weight: 300;
-  box-shadow: 0 10px 28px rgba(0,122,255,0.45), 0 0 0 4px rgba(0,122,255,0.1);
-  cursor: pointer;
-  z-index: 2147483647;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  line-height: 1;
-}
-.fab:active { transform: translateX(-50%) scale(0.94); }
-/* 浮动按钮下方文字标签 */
-.fab-label {
-  position: fixed;
-  bottom: calc(68px + env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 11px;
-  font-weight: 600;
-  color: #007aff;
-  z-index: 2147483647;
-  pointer-events: none;
-  text-shadow: 0 1px 2px rgba(255,255,255,0.9);
-  letter-spacing: 1px;
-}
+/* ① 浮动按钮已废弃 —— 改为底部普通 tab（在 tab-bar 内） */
+.fab { display: none !important; }
+.fab-label { display: none !important; }
 
-/* ① 底部导航 —— 严格对称分布（左右2个，中间留空给FAB） */
+/* ② 底部导航 —— 严格 4 个对称：首页/明细/＋记一笔/统计（更多已删） */
 .tab-bar {
   position: fixed;
   bottom: 0;
@@ -436,10 +401,10 @@ body {
   -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid rgba(0,0,0,0.06);
   display: grid;
-  grid-template-columns: 1fr 1fr 90px 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr); /* 对称4等分 */
   align-items: center;
-  padding: 8px 0 calc(28px + env(safe-area-inset-bottom));
-  z-index: 2147483646;
+  padding: 8px 0 calc(16px + env(safe-area-inset-bottom));
+  z-index: 100;
 }
 .tab-bar-item {
   display: flex;
@@ -452,18 +417,27 @@ body {
   transition: color 0.2s;
   font-size: 11px;
   font-weight: 500;
+  gap: 2px;
 }
 .tab-bar-item.active { color: #007aff; }
-.tab-bar-icon { font-size: 24px; margin-bottom: 2px; }
-.tab-spacer { /* 中间给FAB留空 */ width: 100%; }
+.tab-bar-icon { font-size: 24px; line-height: 1; margin-bottom: 2px; }
+/* 中间的「记一笔」tab —— 和其他一样大，只是图标用加号，颜色稍微突出 */
+.tab-bar-item.tab-add {
+  color: #007aff;
+}
+.tab-bar-item.tab-add .tab-bar-icon {
+  font-size: 26px;
+  font-weight: 700;
+}
+.tab-spacer { display: none; }
 
-/* 模态框 */
+/* 模态框（z-index 远超任何其他元素，且模态框打开时下面的 tab-bar/FAB 都不会盖进来） */
 .modal-mask {
   display: none;
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 999;
+  z-index: 99999;  /* 比 tab-bar 和任何浮动元素都高 */
   align-items: stretch;
   justify-content: center;
 }
@@ -492,11 +466,23 @@ body {
 /* ⑤ 保存取消按钮固定在底部，随时可见 */
 .modal-footer {
   flex-shrink: 0;
-  padding-top: 10px;
+  padding-top: 12px;
   padding-bottom: 4px;
-  background: linear-gradient(to top, #fff 70%, rgba(255,255,255,0));
+  margin-top: 8px;
+  background: #fff;
+  border-top: 1px solid #f2f2f7;
+  /* sticky 贴底永远可见 */
   position: sticky;
   bottom: 0;
+  /* 再额外加一点安全区，避免 iOS Home 指示器遮掉按钮最底部 */
+  padding-bottom: calc(4px + env(safe-area-inset-bottom));
+  /* 确保 z-index 在 scroll-body 上面 */
+  z-index: 2;
+}
+/* modal-footer 内按钮高度加高，保证能点到 */
+.modal-footer .btn {
+  padding: 14px;
+  min-height: 52px;
 }
 .modal-handle {
   width: 44px;
@@ -803,7 +789,7 @@ body {
   </div>
 </div>
 
-<!-- 底部导航（③ 已删除设置tab，① 严格对称：首页/明细/空/统计/更多 → 留空给FAB居中） -->
+<!-- 底部导航：严格 4 个对称 —— 首页 / 明细 / ＋记一笔 / 统计  （已删除「更多」） -->
 <div class="tab-bar">
   <div class="tab-bar-item active" onclick="switchTab('home')" id="t-home">
     <div class="tab-bar-icon">🏠</div>
@@ -813,18 +799,17 @@ body {
     <div class="tab-bar-icon">📋</div>
     <div>明细</div>
   </div>
-  <div class="tab-spacer"></div>
+  <div class="tab-bar-item tab-add" onclick="openAddModal()">
+    <div class="tab-bar-icon">＋</div>
+    <div>记一笔</div>
+  </div>
   <div class="tab-bar-item" onclick="switchTab('stats')" id="t-stats">
     <div class="tab-bar-icon">📊</div>
     <div>统计</div>
   </div>
-  <div class="tab-bar-item" onclick="showModal('modal-settings-all')">
-    <div class="tab-bar-icon">⋯</div>
-    <div>更多</div>
-  </div>
 </div>
 
-<!-- ① 记账浮动按钮（加大+居中+命名） + 文字标签 -->
+<!-- 老 FAB（浮动按钮）已废弃，CSS display:none -->
 <button class="fab" onclick="openAddModal()" aria-label="记一笔">+</button>
 <div class="fab-label">记一笔</div>
 
